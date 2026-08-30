@@ -12,3 +12,4 @@ app/build/
 *.pyc
 __pycache__/
 .kotlin/
+watch connect cmd.txt

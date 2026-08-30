@@ -1,0 +1,2 @@
+"C:\Program Files\ASUS\GlideX\adb.exe" pair 192.168.1.16:41383
+"C:\Program Files\ASUS\GlideX\adb.exe" connect 192.168.1.16:41383

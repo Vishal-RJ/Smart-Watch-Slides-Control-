@@ -1,73 +1,96 @@
-# ⌚ Wear OS Presentation Clicker & Laptop Receiver
+# ⌚ Smart Watch Slides Control (Wear OS + PC)
 
-A gesture-driven, low-latency, and battery-efficient Wear OS remote clicker for PowerPoint, Google Slides, Keynote, Canva, and PDF presentations.
+[![Wear OS](https://img.shields.io/badge/Wear%20OS-3.0%2B-blue.svg)](https://developer.android.com/wear)
+[![Android Studio](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-purple.svg)](https://developer.android.com/jetpack/compose)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+An intuitive, low-latency, and battery-optimized presentation remote control system designed for **Samsung Galaxy Watch 4 / Wear OS 3+ smartwatches** and **Windows/Mac/Linux laptops**.
 
-## 🌟 Key Features
-
-### 1. Dual Interaction Model: Touch + Wrist Gestures
-- **Full-Screen Touch Target:** The entire screen acts as a seamless touch surface.
-  - **Single Tap:** Advance to the **Next Slide** (`"NEXT"` payload, crisp short haptic pulse).
-  - **Double Tap:** Return to the **Previous Slide** (`"PREV"` payload, distinct dual haptic pulse).
-  - **Silent & Clean:** Slides advance immediately with tactile haptic feedback without on-screen text clutter.
-- **Hardware IMU Wrist Gestures (Samsung Galaxy Watch 4 / Wear OS):**
-  - **Wrist Flick / Twist Outward:** Triggers **Next Slide** with haptic confirmation.
-  - **Wrist Flick / Twist Inward:** Triggers **Previous Slide** with dual haptic confirmation.
-  - **Background Thread Polling:** 50Hz IMU sensor polling on a dedicated `HandlerThread` without UI lag.
-  - **Debounce Cooldown:** 850ms cooldown prevents recoil/return swing false triggers.
-  - **Toggle in Settings:** Enable or disable hand gestures anytime in the settings dialog.
-
-### 2. Ambient Background Clock & OLED Theme
-- **Ambient Idle Clock:** Subtle muted grey (`#808080` @ 38% alpha) background clock displaying:
-  - **Current Time** (e.g. `10:42 PM`)
-  - **Day of the Week & Date** (e.g. `Sunday, Aug 30`)
-- **Pure Solid Black Background (`#000000`):** Maximizes OLED battery efficiency on Samsung Galaxy Watch 4/5/6 and Wear OS devices.
-- **Liquid Sinusoidal Wavy Ripple Animation:** 60fps concentric wave ripple expanding smoothly from touch origin `(x, y)`.
-- **Always-On Display / KeepScreenOn Flag:** Keeps the screen ready throughout your presentation.
-
-### 3. Settings & In-App Config
-- **Long Press / Top Pill:** Opens the IP and Settings dialog.
-- **Adjust Laptop IP:** Easy stepper buttons (+1, +10, -1, -10) and quick subnet presets (`192.168.1.x`, `10.0.0.x`, etc.).
-- **Gesture Control Toggle:** Turn `Hand Gestures (ON/OFF)` with state persistence across app restarts.
-
-### 4. Python Receiver Server (`server.py`)
-- Standalone WebSocket server running on `0.0.0.0:8765`.
-- Simulates native **Right Arrow** (`pyautogui.press('right')`) and **Left Arrow** (`pyautogui.press('left')`).
-- Auto-detects and displays all active local LAN IP addresses on startup.
+Navigate seamlessly through **PowerPoint, Google Slides, Keynote, Canva, and PDF** presentations using **wrist gestures** or **silent screen taps** with instant tactile haptic feedback.
 
 ---
 
-## 📁 Project Architecture
+## 🌟 Key Highlights & Features
+
+### 1. Dual Control Modality
+
+| Control Method | Trigger Action | Simulated Key | Haptic Feedback |
+| :--- | :--- | :--- | :--- |
+| **Single Tap (Anywhere)** | Tap watch face once | **Right Arrow (`→`)** | 1x Short Crisp Haptic Pulse |
+| **Double Tap (Anywhere)** | Quick double-tap | **Left Arrow (`←`)** | 2x Dual Distinct Pulses |
+| **Wrist Flick Outward** | Rapid forearm twist/flick right | **Right Arrow (`→`)** | 1x Short Crisp Haptic Pulse |
+| **Wrist Flick Inward** | Rapid forearm twist/flick left | **Left Arrow (`←`)** | 2x Dual Distinct Pulses |
+| **Long Press / Top Pill** | Hold screen or tap status pill | *Opens Settings / IP Config* | Medium Haptic Pulse |
+
+### 2. 🦾 Hardware IMU Motion Recognition (Galaxy Watch 4)
+* **50Hz Dedicated Background Sensor Polling:** Operates on an isolated `HandlerThread` without dropping frames on the Compose UI thread.
+* **Gyroscope Angular Velocity Engine:** Measures rapid angular rotational acceleration ($\omega > 4.2 \text{ rad/s}$) on roll and yaw axes.
+* **850ms Cooldown Recoil Filter:** Eliminates false triggers when your wrist returns to a resting position after a flick.
+* **Toggleable via Settings:** Easily enable or disable hand gesture recognition from the in-app settings screen to conserve battery when desired.
+
+### 3. 🕒 Ambient Background Clock & OLED Dark Mode
+* **OLED Pure Black (`#000000`):** Turns off OLED pixels to maximize battery life during long presentation sessions.
+* **Ambient Idle Clock:** Subtle muted grey (`#808080` @ 38% alpha) background clock displaying:
+  * **Digital Time:** e.g., `10:42 PM`
+  * **Day & Date:** e.g., `Sunday, Aug 30`
+* **Liquid Wavy Ripple Canvas:** 60fps concentric sinusoidal wave animation expanding from the exact touch origin coordinates `(x, y)`.
+* **Silent Navigation:** No disruptive on-screen text overlays; haptics confirm every slide transition blindly.
+
+### 4. ⚡ High-Speed WebSocket Python Receiver Server
+* Lightweight, standalone Python WebSocket server (`server.py`).
+* Runs on `0.0.0.0:8765` and translates network payloads (`NEXT`, `PREV`) into native keyboard arrow keystrokes using `pyautogui`.
+* Automatically discovers and displays all available local LAN IP addresses.
+
+---
+
+## 🏗️ System Architecture
 
 ```
-watch ppt control/
-├── app/                                 # Wear OS 3+ Compose Module
-│   ├── build.gradle.kts                 # Android & Compose dependencies
+                                          Local Wi-Fi Network
+┌────────────────────────────────┐         WebSocket (Port 8765)         ┌────────────────────────────────┐
+│   Samsung Galaxy Watch 4       │ ────────────────────────────────────► │      Laptop / PC Receiver      │
+│   (Wear OS 3+ / Jetpack)       │                                       │          (Python 3)            │
+│                                │ ◄──────────────────────────────────── │                                │
+│ • Full-Screen Touch Detection  │             ACK / Status              │ • WebSocket Server (8765)      │
+│ • IMU Gyroscope Gesture Engine │                                       │ • PyAutoGUI Keystroke Bridge   │
+│ • Haptic Pulse Feedback        │                                       │ • PowerPoint / Keynote / PDF   │
+│ • Ambient Background Clock     │                                       └────────────────────────────────┘
+└────────────────────────────────┘
+```
+
+---
+
+## 📁 Repository Structure
+
+```
+Smart-Watch-Slides-Control/
+├── app/                                 # Wear OS 3+ Android Application
+│   ├── build.gradle.kts                 # Dependencies & Build Configuration
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml          # Permissions (INTERNET, VIBRATE, HIGH_SAMPLING_RATE_SENSORS)
 │   │   ├── java/com/presentation/wearclicker/
-│   │   │   ├── AppConfig.kt             # Default Server IP, Port & Settings Keys
-│   │   │   ├── MainActivity.kt          # Main Activity & KeepScreenOn flag
+│   │   │   ├── AppConfig.kt             # Default Server IP, Port, Preferences Keys
+│   │   │   ├── MainActivity.kt          # Entry Activity (KeepScreenOn flag)
 │   │   │   ├── gesture/
-│   │   │   │   └── WristGestureDetector.kt # 50Hz Background IMU Accelerometer + Gyroscope engine
+│   │   │   │   └── WristGestureDetector.kt # 50Hz Gyroscope & Accelerometer motion engine
 │   │   │   ├── network/
-│   │   │   │   ├── ConnectionState.kt   # Sealed connection states
-│   │   │   │   └── PresentationWebSocketClient.kt # OkHttp WebSocket with auto-reconnect
+│   │   │   │   ├── ConnectionState.kt   # Connection state models
+│   │   │   │   └── PresentationWebSocketClient.kt # OkHttp WebSocket client with auto-reconnect
 │   │   │   ├── ui/
-│   │   │   │   ├── ClickerScreen.kt     # Full-screen gesture detector & Ambient UI
-│   │   │   │   ├── BackgroundClock.kt   # Muted grey ambient clock (Time, Date, Day)
-│   │   │   │   ├── WavyRippleEffect.kt  # 60fps Canvas sinusoidal expanding ripple
-│   │   │   │   ├── IpConfigDialog.kt    # OLED Settings, IP adjuster & Gesture Toggle
-│   │   │   │   ├── PresentationViewModel.kt # StateFlow ViewModel & Sensor Coordinator
-│   │   │   │   └── theme/Theme.kt       # OLED Black & Light Blue palette
+│   │   │   │   ├── ClickerScreen.kt     # Main interaction screen & touch handling
+│   │   │   │   ├── BackgroundClock.kt   # Muted grey ambient clock composable
+│   │   │   │   ├── WavyRippleEffect.kt  # 60fps Canvas sinusoidal ripple animation
+│   │   │   │   ├── IpConfigDialog.kt    # In-app IP editor & Gesture Toggle
+│   │   │   │   ├── PresentationViewModel.kt # StateFlow lifecycle & sensor coordinator
+│   │   │   │   └── theme/Theme.kt       # OLED Black color palette
 │   │   │   └── util/
-│   │   │       └── HapticHelper.kt      # Short & Double vibration patterns
-│   │   └── res/                         # Values, colors, styles, launcher icons
-├── server/                              # Laptop Server
-│   ├── server.py                        # Python WebSocket receiver
+│   │   │       └── HapticHelper.kt      # Crisp single & dual vibration waveforms
+│   │   └── res/                         # App icons, layouts, and strings
+├── server/                              # Laptop Receiver Server
+│   ├── server.py                        # Python WebSocket receiver & PyAutoGUI bridge
 │   ├── requirements.txt                 # websockets, pyautogui
-│   └── test_client.py                   # Local CLI client tester
+│   └── test_client.py                   # Local CLI diagnostic tester
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── README.md
@@ -75,38 +98,68 @@ watch ppt control/
 
 ---
 
-## 🚀 Quick Setup & Usage
+## 🚀 Getting Started
 
-### Step 1: Run the Laptop Server
+### 1. Start the Laptop Server
 
-1. Open PowerShell or terminal in the `server` directory:
+1. Open PowerShell or a terminal inside the `server/` directory:
    ```bash
    cd server
    pip install -r requirements.txt
    ```
-2. Start the server:
+2. Launch the receiver server:
    ```bash
    python server.py
    ```
-3. Note your laptop's local LAN IP displayed in the console (e.g., `ws://192.168.1.17:8765`).
+3. The server terminal will display your laptop's local LAN IP address:
+   ```
+   ==============================================================
+          WEAR OS PRESENTATION CLICKER - RECEIVER SERVER       
+   ==============================================================
+    Server Port : 8765
+    Available Laptop IP(s):
+      -> ws://192.168.1.17:8765
+   ==============================================================
+   ```
+
+*(Keep this terminal running in the background during your presentation)*.
 
 ---
 
-### Step 2: Configure & Launch Watch App
+### 2. Deploy to Samsung Galaxy Watch 4
 
-1. Ensure the Watch and Laptop are on the **same Wi-Fi network**.
-2. Long-press on the watch face or tap the top status pill to open **Settings**.
-3. Set your laptop IP and optionally turn **Hand Gestures ON**.
-4. Tap **Save**.
+#### Option A: Direct ADB Install over Wi-Fi
+1. Enable **Developer Options** and **Wireless Debugging** on your Galaxy Watch.
+2. Note the IP and pairing port on your watch, then connect via ADB:
+   ```bash
+   adb pair <WATCH_IP>:<PAIR_PORT>
+   adb connect <WATCH_IP>:<PORT>
+   ```
+3. Install the pre-built debug APK:
+   ```bash
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+#### Option B: Build & Run with Android Studio
+1. Open the project folder in **Android Studio**.
+2. Select your paired Galaxy Watch from the target device dropdown.
+3. Click **Run (`Shift + F10`)**.
 
 ---
 
-### Step 3: Presenting Gestures & Controls
+### 3. Connect & Present
 
-| Action / Gesture | Command | Laptop Simulated Key | Tactile Feedback |
-| :--- | :--- | :--- | :--- |
-| **Single Tap (Anywhere)** | Next Slide (`"NEXT"`) | Right Arrow (`→`) | 1x Short Crisp Haptic Pulse |
-| **Double Tap (Anywhere)** | Previous Slide (`"PREV"`) | Left Arrow (`←`) | 2x Dual Distinct Haptic Pulses |
-| **Wrist Flick Outward (Twist Right)** | Next Slide (`"NEXT"`) | Right Arrow (`→`) | 1x Short Crisp Haptic Pulse |
-| **Wrist Flick Inward (Twist Left)** | Previous Slide (`"PREV"`) | Left Arrow (`←`) | 2x Dual Distinct Haptic Pulses |
-| **Long Press / Top Pill** | Open Settings | N/A | Medium Haptic Pulse |
+1. Ensure the **Watch** and **Laptop** are connected to the **same Wi-Fi network** (or laptop mobile hotspot).
+2. Open the **Wear Clicker** app on your watch.
+3. **Set Laptop IP:**
+   - Tap the top status pill or long-press the screen to open **Settings**.
+   - Adjust the IP octets to match your laptop's IP address (e.g. `192.168.1.17`).
+   - Toggle **Hand Gestures ON** (optional).
+   - Tap **Save**.
+4. The top status indicator will turn **green** (`Connected`).
+5. Open your presentation (PowerPoint / Google Slides / Keynote / PDF) and present freely using wrist flicks or screen taps!
+
+---
+
+## 📜 License
+This project is licensed under the MIT License.

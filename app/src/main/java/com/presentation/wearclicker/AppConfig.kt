@@ -21,6 +21,12 @@ object AppConfig {
     const val PREFS_NAME: String = "wear_clicker_prefs"
     const val KEY_LAPTOP_IP: String = "laptop_ip"
     const val KEY_SERVER_PORT: String = "server_port"
+    const val KEY_GESTURES_ENABLED: String = "key_gestures_enabled"
+
+    /**
+     * Default gesture state (OFF by default to preserve battery until enabled)
+     */
+    const val DEFAULT_GESTURES_ENABLED: Boolean = false
 
     /**
      * Generates a full WebSocket URL from an IP and Port
